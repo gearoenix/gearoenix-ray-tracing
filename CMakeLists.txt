@@ -32,6 +32,7 @@ INCLUDE(gx-compile-lib)
 INCLUDE(gx-download-file)
 INCLUDE(gx-flag-util)
 INCLUDE(gx-imgui)
+INCLUDE(gx-compile-shader)
 
 MESSAGE(STATUS "Gearoenix is going to be compiled for ${CMAKE_SYSTEM_NAME}")
 
@@ -125,6 +126,15 @@ FOREACH(GX_TINYGLTF_UNWANTED ${GX_TINYGLTF_UNWANTED_FILES})
     FILE(REMOVE_RECURSE ${GX_TINYGLTF_UNWANTED})
 ENDFOREACH()
 INCLUDE_DIRECTORIES(${GX_TINYGLTF_PATH})
+
+SET(GX_DXC_PATH "${GX_SDK_PATH}/dxc")
+IF(NOT EXISTS "${GX_SDK_PATH}/dxc.zip")
+	MESSAGE(STATUS "Downloading dxc from https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.6.2106/dxc_2021_07_01.zip...")
+	FILE(DOWNLOAD "https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.6.2106/dxc_2021_07_01.zip" "${GX_SDK_PATH}/dxc.zip" TIMEOUT 180)
+	FILE(ARCHIVE_EXTRACT INPUT "${GX_SDK_PATH}/dxc.zip" DESTINATION ${GX_DXC_PATH})
+	FILE(REMOVE "${GX_SDK_PATH}/dxc.zip")
+ENDIF()
+SET(GX_DXC_BINARY_DIR "${GX_DXC_PATH}/bin/x64")
 
 ADD_SUBDIRECTORY(gearoenix)
 ADD_SUBDIRECTORY(editor)
