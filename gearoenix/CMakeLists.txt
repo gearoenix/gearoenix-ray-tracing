@@ -45,6 +45,7 @@ SET(GX_ENGINE_TEST_SRC
         ${GX_ENGINE_VULKAN_TEST_SRC}
         PARENT_SCOPE)
 
+# From the cmake docs, "This is intended to set up file tabs in Visual Studio"
 IF (MSVC)
 	SOURCE_GROUP("ai" FILES ${GX_ENGINE_AI_SRC})
 	SOURCE_GROUP("audio" FILES ${GX_ENGINE_AUDIO_SRC})
@@ -67,7 +68,10 @@ IF (MSVC)
 ENDIF()
 
 ADD_LIBRARY(GearoenixGameEngine STATIC ${GX_ENGINE_SRC})
-ADD_DEPENDENCIES(GearoenixGameEngine dxr_shaders)
+
+if(GX_HAS_DXR_DEPENDENCY)
+	ADD_DEPENDENCIES(GearoenixGameEngine GX_DXR_SHADERS_TARGET)
+ENDIF()
 
 FOREACH(GX_LIB ${GX_DEBUG_LIBS})
     TARGET_LINK_LIBRARIES(GearoenixGameEngine debug ${GX_LIB})
