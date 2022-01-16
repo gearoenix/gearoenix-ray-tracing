@@ -6,6 +6,7 @@
 #include "../platform/gx-plt-application.hpp"
 #include "../platform/gx-plt-library.hpp"
 #include "gx-dxr-adapter.hpp"
+#include "gx-dxr-camera.hpp"
 #include "gx-dxr-check.hpp"
 #include "gx-dxr-descriptor.hpp"
 #include "gx-dxr-device.hpp"
@@ -27,7 +28,8 @@ gearoenix::dxr::Engine::Engine(platform::Application& platform_application) noex
     : render::engine::Engine(render::engine::Type::Direct3DX, platform_application)
     , platform_application(platform_application)
 {
-    device_lost_handle();
+    frames_count = GX_DXR_FRAMES_BACKBUFFER_NUMBER;
+    device_lost_handle(0);
 }
 
 void gearoenix::dxr::Engine::device_lost_handle(const int failed_tries) noexcept
@@ -37,10 +39,12 @@ void gearoenix::dxr::Engine::device_lost_handle(const int failed_tries) noexcept
     texture_manager = nullptr;
     submission_manager = nullptr;
     pipeline_manager = nullptr;
+    camera_manager = nullptr;
+    model_manager = nullptr;
     mesh_manager = nullptr;
     uploader = nullptr;
-    descriptor_manager = nullptr;
     swapchain = nullptr;
+    descriptor_manager = nullptr;
     queue = nullptr;
     device = nullptr;
     adapter = nullptr;
@@ -55,14 +59,15 @@ void gearoenix::dxr::Engine::device_lost_handle(const int failed_tries) noexcept
     adapter = std::make_shared<Adapter>();
     device = std::make_shared<Device>(adapter);
     queue = std::make_shared<Queue>(device, Queue::Type::Direct);
-    swapchain = std::make_shared<Swapchain>(queue);
     descriptor_manager = std::make_shared<DescriptorManager>(device);
+    swapchain = std::make_shared<Swapchain>(*this);
     uploader = std::make_shared<Uploader>(device);
     mesh_manager = std::make_unique<MeshManager>(*this);
     model_manager = std::make_unique<ModelManager>(*this);
     pipeline_manager = std::make_shared<PipelineManager>(device);
     submission_manager = std::make_shared<SubmissionManager>(*this);
     texture_manager = std::make_unique<TextureManager>(*this);
+    camera_manager = std::make_unique<CameraManager>(*this);
 
     window_resized(failed_tries);
 }
@@ -71,7 +76,11 @@ void gearoenix::dxr::Engine::window_resized(int failed_tries) noexcept
 {
     if (swapchain->set_window_size(platform_application))
         device_lost_handle(++failed_tries);
-    submission_manager->clear_command_lists();
+}
+
+void gearoenix::dxr::Engine::window_resized() noexcept
+{
+    window_resized(0);
 }
 
 gearoenix::dxr::Engine::~Engine() noexcept
@@ -101,7 +110,7 @@ void gearoenix::dxr::Engine::end_frame() noexcept
 {
     render::engine::Engine::end_frame();
     if (submission_manager->render_frame())
-        device_lost_handle();
+        device_lost_handle(0);
 }
 
 void gearoenix::dxr::Engine::upload_imgui_fonts() noexcept
