@@ -125,6 +125,31 @@ public:
     {
         const auto& ro = ray.get_origin();
         const auto& rrd = ray.get_reversed_normalized_direction();
+        
+        if (fabs(rrd.x) < FLT_EPSILON)
+        {
+            if (ro.x < lower.x || ro.x > upper.x)
+                return std::nullopt;
+            else
+                return (Element)0.0;
+        }
+        
+        if (fabs(rrd.y) < FLT_EPSILON)
+        {
+            if (ro.y < lower.y || ro.y > upper.y)
+                return std::nullopt;
+            else
+                return (Element)0.0;
+        }
+        
+        if (fabs(rrd.z) < FLT_EPSILON)
+        {
+            if (ro.z < lower.z || ro.z > upper.z)
+                return std::nullopt;
+            else
+                return (Element)0.0;
+        }
+
         const auto t0 = (lower - ro) * rrd;
         const auto t1 = (upper - ro) * rrd;
         const auto t_min = t0.minimum(t1).maximum();
