@@ -124,39 +124,67 @@ public:
     [[nodiscard]] constexpr std::optional<Element> hit(const Ray3<Element>& ray, const Element d_min) const noexcept
     {
         const auto& ro = ray.get_origin();
+        const auto& rd = ray.get_normalized_direction();
         const auto& rrd = ray.get_reversed_normalized_direction();
         
-        if (fabs(rrd.x) < FLT_EPSILON)
+        const Element tmin = (Element)0.0;
+        const Element tmax = (Element)FLT_MAX;
+
+        if (fabs(rd.x) < FLT_EPSILON)
         {
             if (ro.x < lower.x || ro.x > upper.x)
                 return std::nullopt;
-            else
-                return (Element)0.0;
+        }
+        else
+        {
+            const Element t0 = (lower.x - ro.x) * rrd.x;
+            const Element t1 = (upper.x - ro.x) * rrd.x;
+            
+            if (t0 > t1)
+                std::swap(t0, t1);
+            
+            tmin = std::max(tmin, t0);
+            tmax = std::min(tmax, t1);
         }
         
-        if (fabs(rrd.y) < FLT_EPSILON)
+        if (fabs(rd.y) < FLT_EPSILON)
         {
             if (ro.y < lower.y || ro.y > upper.y)
                 return std::nullopt;
-            else
-                return (Element)0.0;
         }
-        
-        if (fabs(rrd.z) < FLT_EPSILON)
+        else
+        {
+            const Element t0 = (lower.y - ro.y) * rrd.y;
+            const Element t1 = (upper.y - ro.y) * rrd.y;
+
+            if (t0 > t1)
+                std::swap(t0, t1);
+
+            tmin = std::max(tmin, t0);
+            tmax = std::min(tmax, t1);
+        }
+
+        if (fabs(rd.z) < FLT_EPSILON)
         {
             if (ro.z < lower.z || ro.z > upper.z)
                 return std::nullopt;
-            else
-                return (Element)0.0;
+        }
+        else
+        {
+            const Element t0 = (lower.z - ro.z) * rrd.z;
+            const Element t1 = (upper.z - ro.z) * rrd.z;
+
+            if (t0 > t1)
+                std::swap(t0, t1);
+
+            tmin = std::max(tmin, t0);
+            tmax = std::min(tmax, t1);
         }
 
-        const auto t0 = (lower - ro) * rrd;
-        const auto t1 = (upper - ro) * rrd;
-        const auto t_min = t0.minimum(t1).maximum();
-        const auto t_max = t0.maximum(t1).minimum();
-        if (t_max >= static_cast<Element>(0) && t_min <= t_max && t_min < d_min)
-            return t_min;
-        return std::nullopt;
+        if(tmin > tmax || tmin < d_min)
+            return std::nullopt;
+
+        return tmin;
     }
 
     [[nodiscard]] constexpr IntersectionStatus check_intersection_status(const Aabb3<Element>& o) const noexcept
